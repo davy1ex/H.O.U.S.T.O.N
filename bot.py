@@ -9,6 +9,15 @@ from bs4 import BeautifulSoup
 
 import settings
 
+class MyVkLongPoll(VkLongPoll):
+    def listen(self):
+        while True:
+            try:
+                for event in self.check():
+                    yield event
+            except Exception as e:
+                print("error", e)
+
 
 def google_image_search(for_search):
     print("ass")
@@ -46,26 +55,31 @@ def google_image_search(for_search):
 
 
 def main():
-    def reply_to(text, user_id=None, chat_id=None, message_id=None, attachment=None):
-        if user_id:        
-            vk.messages.send(
-                user_id = user_id,
-                attachment = attachment,
-                message = text,
-                random_id = random.randint(100000000, 9999999999)
-            )
-        
-        elif chat_id:        
-            vk.messages.send(
-                peer_id = 2000000000 + chat_id,
-                message = text,
-                random_id = random.randint(100000000, 9999999999)
-            )
+    def reply_to(reply_to, text=None, user_id=None, chat_id=None, message_id=None, attachment=None):
+        for r in reply_to:
+            if r in event.text:
+                if user_id:        
+                    vk.messages.send(
+                        user_id = user_id,
+                        attachment = attachment,
+                        message = text,
+                        random_id = random.randint(100000000, 9999999999)
+                    )
+                
+                elif chat_id:        
+                    vk.messages.send(
+                        peer_id = 2000000000 + chat_id,
+                        message = text,
+                        random_id = random.randint(100000000, 9999999999)
+                    )
+
+                break
 
     vk_session = vk_api.VkApi(token=settings.TOKEN)
 
-    longpoll = VkLongPoll(vk_session)
+    longpoll = MyVkLongPoll(vk_session)
     vk = vk_session.get_api()
+    print("successfull login\nstart listen events")
 
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.text and event.to_me:
@@ -109,8 +123,11 @@ def main():
                     reply_to(attachment=vk_photo_urls, text=text, user_id=event.user_id)
                     os.system("rm -rf " + settings.IMAGES_DIR + "/")
 
-                #reply_to("test", "тестнул", user_id=event.user_id, message_id=event.message_id)
-            
+                #reply_to("test", "тестнул", user_id=event.user_id, message_id=event.message_id)4
+
+                # elif "test" in event.text:
+                reply_to(["test", "тест"], "тестнул", user_id=event.user_id)
+
             if event.from_chat:
                 reply_to("test", "тестнул", chat_id=event.chat_id)
 
